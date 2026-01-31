@@ -28,7 +28,7 @@ def decrypt_data(ct: bytes,encryption_key: bytes, iv:bytes) -> str :
     decrypted_data = decryptor.update(ct) + decryptor.finalize()
     return decrypted_data
 
-def get_salt_and_iv(image: Image.Image) -> tuple[bytes, bytes]: #from typing import Tuple
+def get_salt_and_iv(image: Image.Image) -> tuple[bytes, bytes]:
     img_bytes = image.tobytes()[:64]
     salt = bytes([(b >> 2) for b in img_bytes]) #move 2 places right, cant use lsb because it changes
     
