@@ -30,13 +30,13 @@ pip install -r requirements.txt
 ```python
 import SecretLSB
 
-lsb = SecretLSB("image.png", "my_password")
+lsb = SecretLSB.SecretLSB("image.png", "my_password")
 lsb.encode_image(b"hello, this is a secret message")
 ```
 ### Decode the Message
 
 ```python
-lsb = SecretLSB("image.png", "my_password")
+lsb = SecretLSB.SecretLSB("image.png", "my_password")
 message = lsb.decode_image()
 print(message)
 ```
