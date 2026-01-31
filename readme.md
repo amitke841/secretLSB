@@ -7,7 +7,7 @@ It hides encrypted data inside PNG images while using **two independent security
 - **Password-based pixel order shuffling**
 
 Even if an attacker suspects steganography, extracting meaningful data without the password is computationally impossible.
-
+The image can be sent normally throughout the internet without any worries about losing the secret.
 
 
 ## 🧠 Example
