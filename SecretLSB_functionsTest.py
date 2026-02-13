@@ -176,7 +176,7 @@ def encode_image(image: Image.Image, password:str, data:str) -> Image.Image:
     signed_image = implemet_data(image, pixel_order, encrypted_data)
     return signed_image
 
-def decode_image(image: Image.Image, password:str) -> str:
+def decode_image(image: Image.Image, password:str) -> bytes:
     salt, iv = get_salt_and_iv(image)
     encryption_key = get_encryption_key(password, salt)
     

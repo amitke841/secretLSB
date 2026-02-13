@@ -6,7 +6,13 @@ import hashlib
 import random
 
 def convertToPng(image: Image.Image):
-    image.save("converted.png")
+    """
+    converts image to png(RGB MODE), to use with SecretLSB
+    """
+    if image.mode == 'P': #if P convert to RGB
+        image = image.convert('RGB')
+    
+    image.save("converted.png", format='PNG')
 
 
 class SecretLSB:
@@ -24,13 +30,19 @@ class SecretLSB:
     
     
     def encode_image(self, data:str):
+        """
+        encodes data into image
+        """
         encrypted_data = self._encrypt_data(data,self._encryption_key, self._iv)
         
         signed_image = self._implemet_data(self._image, self._pixel_order, encrypted_data)
         self._image = signed_image
         self._image.save(self._file_path)
 
-    def decode_image(self) -> str:        
+    def decode_image(self) -> bytes:
+        """
+        decodes data from image
+        """
         encrypted_data = self._extract_data(self._image, self._pixel_order)
         
         data = self._decrypt_data(encrypted_data, self._encryption_key, self._iv)
@@ -42,6 +54,9 @@ class SecretLSB:
     #INNER FUNCS
     
     def _get_encryption_key(self, password:str, salt: bytes, iterations:int = 500_000) -> bytes :
+        """
+        gets as a parm password and salt, and returns the encrytion key
+        """
         kdf = PBKDF2HMAC(
             algorithm = hashes.SHA256(),
             length = 16,
@@ -53,18 +68,27 @@ class SecretLSB:
         return key
 
     def _encrypt_data(self, data: bytes,encryption_key: bytes, iv:bytes) -> bytes :
+        """
+        encrypts data using AES128, iv and encrytion key
+        """
         cipher = Cipher(algorithms.AES128(encryption_key), modes.CTR(iv))
         encryptor = cipher.encryptor()
         ct = encryptor.update(data) + encryptor.finalize()
         return ct
 
     def _decrypt_data(self, ct: bytes,encryption_key: bytes, iv:bytes) -> str :
+        """
+        decrypts data using AES128, iv and encrytion key
+        """
         cipher = Cipher(algorithms.AES128(encryption_key), modes.CTR(iv))
         decryptor = cipher.decryptor()
         decrypted_data = decryptor.update(ct) + decryptor.finalize()
         return decrypted_data
 
     def _get_salt_and_iv(self, image: Image.Image) -> tuple[bytes, bytes]:
+        """
+        gets salt and iv as consts from each image(deterministic)
+        """
         img_bytes = image.tobytes()[:64]
         salt = bytes([(b >> 2) for b in img_bytes]) #move 2 places right, cant use lsb because it changes
         
@@ -73,23 +97,35 @@ class SecretLSB:
         return salt, iv
 
     def _get_pixel_order(self, image: Image.Image, encryption_key: bytes) -> list:
+        """
+        returns the shuffled pixel order of image using encryption key as seed
+        """
         random.seed(encryption_key)
         total_pixels = [(x,y) for x in range(image.width) for y in range(image.height)]
         random.shuffle(total_pixels)
         return total_pixels
 
     def _get_length_bits(self, length: int) -> list:
+        """
+        creates and returns the bits representing the length of data
+        """
         binary_str = bin(length)[2:].zfill(18)
         bits = [int(bit) for bit in binary_str]
         return bits #[::-1]
 
     def _get_data_bits(self, data:bytes) -> list:
+        """
+        converts data into bits list
+        """
         bits = []
         for byte in data:
             bits += [(byte >> i) & 1 for i in reversed(range(8))]
         return bits
         
     def _modify_pixels_rgb(self, bits_list: list, pixel_order: list, image: Image.Image):
+        """
+        RGB/RGBA - modifies each pixel in pixel order, with each bit on bit list(LSB)
+        """
         for pixel, bit in zip(pixel_order, range(0, len(bits_list), 3)):
             r, g, b = image.getpixel(pixel)[:3] #ignore alpha channel if exists
             clear_byte = 0b11111110
@@ -109,6 +145,9 @@ class SecretLSB:
 
             
     def _modify_pixels_l(self, bits_list: list, pixel_order: list, image: Image.Image):
+        """
+        GRAYSCALE - modifies each pixel in pixel order, with each bit on bit list(LSB)
+        """
         for pixel, bit in zip(pixel_order, range(len(bits_list))):
             l = image.getpixel(pixel)
             clear_byte = 0b11111110
@@ -118,6 +157,9 @@ class SecretLSB:
             image.putpixel(pixel, l)
             
     def _read_data_rgb(self, image: Image.Image, pixel_order: list, length: int) -> list:
+        """
+        RGB/RGBA - reads LSB bit from image and returns bits list
+        """
         bits = []
         for pixel in pixel_order:
             r, g, b = image.getpixel(pixel)[:3] #ignore alpha channel if exists
@@ -131,6 +173,9 @@ class SecretLSB:
         return bits
 
     def _read_data_l(self, image: Image.Image, pixel_order: list, length: int) -> list:
+        """
+        GRAYSCALE - reads LSB bit from image and returns bits list
+        """
         bits = []
         for pixel in pixel_order:
             l = image.getpixel(pixel)
@@ -142,6 +187,9 @@ class SecretLSB:
         
 
     def _implemet_data(self, image: Image.Image, pixel_order: list, data: bytes) -> Image.Image: #add pixels for length
+        """
+        takes image, shuffled pixel order and encrypted data and implements data in image
+        """
         created_image = image.copy()
         pixels_for_length = 6
         if(created_image.mode == "P"): created_image = created_image.convert("RGB")
@@ -173,6 +221,9 @@ class SecretLSB:
 
 
     def _extract_data(self, image: Image.Image, pixel_order: list) -> bytes:
+        """
+        takes image and shuffled pixel order, and extracts encypted data from image
+        """
         pixels_for_length = 6 #change
         
         if image.mode == 'RGB' or image.mode == 'RGBA':
