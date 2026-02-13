@@ -7,7 +7,7 @@ It hides encrypted data inside PNG images while using **two independent security
 - **Password-based pixel order shuffling**
 
 Even if an attacker suspects steganography, extracting meaningful data without the password is computationally impossible.
-
+The image can be sent normally throughout the internet without any worries about losing the secret.
 
 
 ## 🧠 Example
@@ -30,13 +30,13 @@ pip install -r requirements.txt
 ```python
 import SecretLSB
 
-lsb = SecretLSB("image.png", "my_password")
+lsb = SecretLSB.SecretLSB("image.png", "my_password")
 lsb.encode_image(b"hello, this is a secret message")
 ```
 ### Decode the Message
 
 ```python
-lsb = SecretLSB("image.png", "my_password")
+lsb = SecretLSB.SecretLSB("image.png", "my_password")
 message = lsb.decode_image()
 print(message)
 ```
